@@ -1,0 +1,71 @@
+# values.yaml
+# Diese Datei enthält die Standardwerte für das Helm Chart.
+# Alle Werte lassen sich bei der Installation via --set oder über ein separates YAML-File überschreiben.
+
+# Anzahl der Replikate, die im Deployment erstellt werden.
+replicaCount: 3
+
+# Konfiguration des Docker-Images
+image:
+  repository: nginx        # Name des Docker-Images.
+  pullPolicy: IfNotPresent # Image Pull Policy: "Always", "IfNotPresent" oder "Never".
+  tag: "latest"            # Tag des Docker-Images (z. B. "latest" oder eine spezifische Version).
+
+# Konfiguration des Kubernetes Services
+service:
+  type: ClusterIP          # Typ des Services (ClusterIP, NodePort, LoadBalancer).
+  port: 80                 # Port, über den der Service erreichbar ist.
+
+# Ressourcenkonfiguration für den Container (z. B. CPU- und Speicherkontingente)
+resources: {}              # Limits und Requests können hier definiert werden.
+                          # Beispiel:
+                          # limits:
+                          #   cpu: 100m
+                          #   memory: 128Mi
+                          # requests:
+                          #   cpu: 100m
+                          #   memory: 128Mi
+
+# -------------------------------------------------------------------
+# Vault Integration als Sidecar (Vault Agent Injector)
+# Mithilfe von Annotations in der Pod-Spezifikation wird der Vault Agent als Sidecar
+# automatisch injiziert, wenn diese Integration aktiviert ist.
+vault:
+  enabled: false           # Auf true setzen, um die Vault Integration zu aktivieren.
+  role: "my-vault-role"    # Vault-Rolle, die für die Authentifizierung verwendet wird.
+  # Pfad im Vault, an dem sich das Secret befindet (z. B. secret/data/myapp/config).
+  secretPath: "secret/data/myapp/config"
+  # Optional: Vorlage, um das abgerufene Secret zu formatieren.
+  template: |
+    {{- with secret "secret/data/myapp/config" -}}
+    {{ .Data.data | toJSON }}
+    {{- end }}
+
+# -------------------------------------------------------------------
+# Optionale ConfigMap
+# Mit diesen Einstellungen kann eine ConfigMap erstellt werden.
+configmap:
+  enabled: false           # Auf true setzen, um die Erstellung der ConfigMap zu aktivieren.
+  data: {}                 # Hier können beliebige key-value Paare definiert werden.
+  # Beispiel:
+  # data:
+  #   my-config.yaml: |
+  #     key: value
+  #     anotherKey: anotherValue
+
+# -------------------------------------------------------------------
+# Optionale Ingress Konfiguration
+ingress:
+  enabled: true           # Auf true setzen, um den Ingress zu erstellen.
+  # Falls benötigt, kann hier die Ingress-Klasse angegeben werden (z. B. "nginx")
+  className: ""
+  annotations: {}          # Hier können beliebige Ingress-Annotations definiert werden.
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []                  # Optional: TLS-Konfiguration, z. B.
+                          # - secretName: tls-secret
+                          #   hosts:
+                          #     - chart-example.local

@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "basic-deployment.fullname" . }}
+  labels:
+    {{- include "basic-deployment.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "basic-deployment.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "basic-deployment.name" . }}
+      # Vault Integration: Annotations nur hinzufügen, wenn aktiviert.
+      annotations:
+        {{- if .Values.vault.enabled }}
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: {{ .Values.vault.role | quote }}
+        vault.hashicorp.com/agent-inject-secret-config: {{ .Values.vault.secretPath | quote }}
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{- .Values.vault.template | nindent 10 }}
+        {{- end }}
+    spec:
+      containers:
+      - name: {{ include "basic-deployment.name" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      # Hinweis: nodeSelector und tolerations sind in dieser Version nicht konfigurierbar.
